@@ -40,8 +40,6 @@ Freebie Tide Collector: > 5 booking discount
 Shoreline: Family (has children, age < 58)
 Deep Tide Planners: Early Birds (duration between flight or hotel and booking date > 3 months)
 Riptide Rush: Last-Minute (duration between flight or hotel and booking date < 15 days)
-High Tide: (total revenue > 3,000$)
-King Time: (total revenue > 5,000$)
 ### Table of groups
 | Group Name | Perks | Rewards |
 | --- | --- | --- |
@@ -50,5 +48,3 @@ King Time: (total revenue > 5,000$)
 | Shoreline (Family) | Free breakfast, Access to Kids Club, Free Checked Bags | - |
 | Deep Tide Planners | Promotional Offer for next season | - |
 | Riptide Rush | Free Cancellation | - |
-| High Tide | Free Hotel Night | - |
-| King Tide | Lounge Access, Free Upgrade to First Class | - |
