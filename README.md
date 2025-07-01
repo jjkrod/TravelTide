@@ -43,8 +43,9 @@ Riptide Rush: Last-Minute (duration between flight or hotel and booking date < 1
 High Tide: (total revenue > 3,000$)
 King Time: (total revenue > 5,000$)
 ### Table of groups
+
+| Group Name | Perks | Rewards |
 | --- | --- | --- |
-| Group Name | Perks | Rewards
 | Unknown Tide | 15% off the first order for a flight or hotel | - |
 | Freebie Tide Collector | Exclusive offers by rewarding actions (i.e downloading app) | - |
 | Shoreline (Family) | Free breakfast, Access to Kids Club, Free Checked Bags | - |
