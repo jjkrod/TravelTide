@@ -44,7 +44,7 @@ Riptide Rush: Last-Minute (duration between flight or hotel and booking date < 1
 | Group Name | Perks | Rewards |
 | --- | --- | --- |
 | Unknown Tide | - | 15% off the first order |
-| Freebie Tide Collector | Exclusive offers by rewarding actions (i.e downloading app) | - |
+| Freebie Tide Collector | Exclusive offers | - |
 | Shoreline (Family) | Free breakfast, Access to Kids Club, Free Checked Bags | - |
-| Deep Tide Planners | Promotional Offer for next season | - |
-| Riptide Rush | Free Cancellation | - |
+| Deep Tide Planners | Promotional Offer on full packages | - |
+| Riptide Rush | Free Cancellation, Free Upgrade | - |
