@@ -38,13 +38,13 @@ Use of the RFM Analysis (Recency, Frequency, Monetary) to score the loyalty. Bas
 Unknown Tide: 0 booking
 Freebie Tide Collector: > 5 booking discount
 Shoreline: Family (has children, age < 58)
-Deep Tide Planners: Early Birds (duration between flight or hotel and booking date > 3 months)
-Riptide Rush: Last-Minute (duration between flight or hotel and booking date < 15 days)
+Deep Tide Planners: Early Birds (duration between flight or hotel and booking date > 90 days)
+Riptide Rush: Last-Minute (duration between flight or hotel and booking date < 90 days)
 ### Table of groups
-| Group Name | Perks | Rewards |
-| --- | --- | --- |
-| Unknown Tide | - | 15% off the first order |
-| Freebie Tide Collector | Exclusive offers | - |
-| Shoreline (Family) | Free breakfast, Access to Kids Club, Free Checked Bags | - |
-| Deep Tide Planners | Promotional Offer on full packages | - |
-| Riptide Rush | Free Cancellation, Free Upgrade | - |
+| Group Name | Perks |
+| --- | --- |
+| Unknown Tide | 15% off the first order |
+| Freebie Tide Collector | Exclusive offers | 
+| Shoreline (Family) | Free breakfast, Access to Kids Club, Free Checked Bags | 
+| Deep Tide Planners | Promotional Offer on full packages | 
+| Riptide Rush | Free Cancellation, Free Lounge Access, Free Upgrade | 
