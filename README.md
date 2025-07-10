@@ -7,18 +7,20 @@ Elena’s mission (Marketing) is to design and execute a personalized rewards pr
 ## Work Breakdown Structure 
 * Exploratory Data Analysis (EDA)
 * Creating Customer Metrics
-* Marketing Competitive Analysis
-* Out of Scope Ideas
 * Cohort Definition
-* Customer Segmentation 
+* Marketing Competitive Analysis
+* Decision-Tree
+* Customer Segmentation
+* Out of Scope Ideas for Marketing
+* Additional Data Collection
 * Presentation
 ## Suggested Cohort
 User who signed up after 2023-01-04 and with more than 7 sessions. 
 ## Tools
-* **SQL** (on Beekeeper) : EDA, Cleaning Data
+* **SQL** (on Beekeeper and Google Colab) : EDA, Cleaning Data
 * **Python** (on Google Colab) : EDA, Data Structure, Data Quality Check, Data Anomalies + Histograms
 * **Lucidcharts** :  Decision Tree, Initial Customer Groups
-* **Tableau** :  Visualizations, Confirm Customer Groups  
+* **Tableau** :  Visualizations, Confirm Customer Groups, Check Outliers
 * **Canva** : Presentation of the project
 * **Jupyter Notebook** (this very document)
 ## Segmentation by bahavior and demographic
@@ -32,15 +34,13 @@ Use of the RFM Analysis (Recency, Frequency, Monetary) to score the loyalty. Bas
 + Group based with time: early birds and last-minute planners
 ### Demographic segmentation
 * Group categorized as family
-* Group categorized as solo
-* Group categorized as couple or with friends
 ### Examples of groups and metrics
 Unknown Tide: 0 booking
-Freebie Tide Collector: > 5 booking discount
+Freebie Tide Collector: > 80% booking with discount applied
 Shoreline: Family (has children, age < 58)
 Deep Tide Planners: Early Birds (duration between flight or hotel and booking date > 90 days)
 Riptide Rush: Last-Minute (duration between flight or hotel and booking date < 90 days)
-### Table of groups
+### Table of groups (Perks)
 | Group Name | Perks |
 | --- | --- |
 | Unknown Tide | 15% off the first order |
@@ -48,3 +48,9 @@ Riptide Rush: Last-Minute (duration between flight or hotel and booking date < 9
 | Shoreline (Family) | Free breakfast, Access to Kids Club, Free Checked Bags | 
 | Deep Tide Planners | Promotional Offer on full packages | 
 | Riptide Rush | Free Cancellation, Free Lounge Access, Free Upgrade | 
+### Table of groups (Perks)
+| Group Name | Score | Reward |
+| --- | --- | --- |
+| Low Tide | 3-7 | 10% off on selected fights and hotels |
+| High Tide | 8-12 | 15% off on selected flights and hotels <br> Customer support within 1 working day |
+| King Tide | 13-15 | 20% off on selected flights and hotels <br> Customer support within 2 hours |
