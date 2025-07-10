@@ -1,0 +1,309 @@
+-- Limit timeframe (after 04.01.2023)
+WITH sessions_2023 AS (
+   	SELECT *
+    FROM sessions s
+    WHERE s.session_start > '2023-01-04'
+),
+-- CTE to have the last session for later use in segmentation
+last_session_per_user AS (
+  SELECT
+    user_id,
+    MAX(session_end) AS last_session_end
+  FROM sessions_2023
+  GROUP BY user_id
+),
+-- Users with more than 7 sessions within the timeframe
+filtered_users AS (
+    SELECT user_id, COUNT(*)
+    FROM sessions_2023
+    GROUP BY user_id
+    HAVING COUNT(*) > 7
+),
+-- This is our main session base table
+-- It joins 'sessions' with all available user and trip information
+-- We made sure to limit the sessions according to Elena's recommendations
+session_base AS (
+    SELECT
+        s.session_id, 
+  			s.user_id, 
+  			s.trip_id, 
+  			s.session_start, 
+  			s.session_end,
+        EXTRACT(EPOCH FROM s.session_end - s.session_start) AS session_duration, 
+  			ROUND(
+     		 EXTRACT(EPOCH FROM (TIMESTAMP '2023-07-30 00:00:00' - l.last_session_end)) / 86400
+   			 ) AS days_since_last_session,
+  			s.page_clicks, 
+  			s.flight_discount, 
+  			s.flight_discount_amount,
+        s.hotel_discount, 
+  			s.hotel_discount_amount, 
+  			s.flight_booked,
+        s.hotel_booked, 
+  			s.cancellation, 
+  			u.birthdate, 
+  			u.gender, 
+  			u.married,
+-- Adding those two columns for later use in groups
+  			CASE WHEN s.flight_discount = TRUE THEN 1 ELSE 0 END AS num_discounted_flight,
+				CASE WHEN s.hotel_discount = TRUE THEN 1 ELSE 0 END AS num_discounted_hotel,
+        u.has_children, 
+  			u.home_country, 
+  			u.home_city, 
+  			u.home_airport,
+        u.home_airport_lat, 
+  			u.home_airport_lon, 
+  			u.sign_up_date,
+        f.origin_airport, 
+  			f.destination, 
+  			f.destination_airport, 
+  			f.seats,
+        f.return_flight_booked, 
+  			f.departure_time, 
+  			f.return_time,
+        f.checked_bags, 
+  			f.trip_airline, 
+  			f.destination_airport_lat,
+        f.destination_airport_lon, 
+  			f.base_fare_usd, 
+  			h.hotel_name,
+        CASE WHEN h.nights < 0 THEN 1 ELSE h.nights END AS nights, -- correcting the anomaly
+        h.rooms, 
+  			h.check_in_time, 
+  			h.check_out_time,
+        h.hotel_per_room_usd AS hotel_price_per_room_night_usd
+    FROM sessions_2023 s
+    LEFT JOIN users u ON s.user_id = u.user_id
+    LEFT JOIN flights f ON s.trip_id = f.trip_id
+    LEFT JOIN hotels h ON s.trip_id = h.trip_id
+  	LEFT JOIN last_session_per_user l ON s.user_id = l.user_id
+    WHERE s.user_id IN (SELECT user_id FROM filtered_users)
+),
+-- trip_id of all trips that have been canceled through a session
+canceled_trips AS (
+    SELECT DISTINCT trip_id
+    FROM session_base
+    WHERE cancellation = TRUE
+),
+-- This is our second base table to aggregate later
+-- It is derived from our session_base table, but we focus on valid trips
+not_canceled_trips AS (
+    SELECT *
+    FROM session_base
+    WHERE trip_id IS NOT NULL
+    AND trip_id NOT IN (SELECT trip_id FROM canceled_trips)
+),
+-- Aggregating user behavior into metrics (browsing behavior)
+user_base_session AS (
+    SELECT
+        user_id,
+        SUM(page_clicks) AS num_clicks,
+        COUNT(DISTINCT session_id) AS num_sessions,
+        AVG(session_duration) AS avg_session_duration,
+  			AVG(checked_bags) AS avg_bags,
+        COUNT(DISTINCT(trip_id)) AS no_total_trips,
+  -- use for reward program
+  			SUM(CASE WHEN flight_booked THEN 1 ELSE 0 END) AS num_flight_booked,
+        SUM(CASE WHEN hotel_booked THEN 1 ELSE 0 END) AS num_hotel_booked,
+  			MAX(days_since_last_session) AS days_since_last_session
+ 		FROM session_base
+    GROUP BY user_id
+),
+-- Aggregating user behavior into travel metrics (valid trips only)
+user_base_trip AS (
+    SELECT
+        user_id,
+        COUNT(DISTINCT trip_id) AS num_trips,
+        SUM(
+            CASE
+                WHEN (flight_booked = TRUE) AND (return_flight_booked = TRUE) THEN 2
+                WHEN flight_booked = TRUE THEN 1
+                ELSE 0
+            END
+        ) AS num_flights,
+        COALESCE(
+            SUM(
+                (hotel_price_per_room_night_usd * nights * rooms) *
+                (1 - COALESCE(hotel_discount_amount, 0))
+            ),
+            0
+        ) AS money_spent_hotel,
+        AVG(EXTRACT(DAY FROM departure_time - session_end)) AS avg_time_after_booking,
+        AVG(haversine_distance(
+            home_airport_lat, home_airport_lon,
+            destination_airport_lat, destination_airport_lon
+        )) AS avg_km_flown,
+  			SUM(base_fare_usd) AS total_fare,
+  -- adding this for later use in segmentation
+				SUM(num_discounted_flight) + SUM(num_discounted_hotel) AS total_discounted_flight_and_hotel
+    FROM not_canceled_trips
+    GROUP BY user_id
+),
+-- For our final user table, we join session metrics, trip metrics, and general user information
+-- Using a LEFT JOIN ensures a row for each user with 7+ browsing sessions in 2023
+final_user_table 	AS (
+		SELECT
+    	-- Columns from user_base_session
+    	b.user_id,
+    	COALESCE(b.num_clicks, 0) AS num_clicks,
+    	COALESCE(b.num_sessions, 0) AS num_sessions,
+    	COALESCE(b.avg_session_duration, 0) AS avg_session_duration,
+    	COALESCE(b.avg_bags, 0) AS avg_bags,
+    	no_total_trips,
+  		total_discounted_flight_and_hotel,
+  		COALESCE(b.num_flight_booked, 0) AS num_flight_booked,
+  		COALESCE(b.num_hotel_booked, 0) AS num_hotel_booked,
+  		b.days_since_last_session,
+    	-- Columns from users
+    	COALESCE(EXTRACT(YEAR FROM AGE(u.birthdate)), 0) AS age,
+    	u.gender,
+    	u.married,
+    	u.has_children,
+    	u.home_country,
+    	u.home_city,
+    	u.home_airport,
+    	-- Columns from user_base_trip
+    	COALESCE(t.num_trips, 0) AS num_valid_trips,
+    	COALESCE(t.num_flights, 0) AS num_flights,
+    	COALESCE(t.money_spent_hotel, 0) AS money_spent_hotel,
+    	COALESCE(t.avg_time_after_booking, 0) AS avg_time_after_booking,
+    	COALESCE(t.avg_km_flown, 0) AS avg_km_flown,
+ 			total_fare,
+    	ROUND((1 - num_trips::DECIMAL / no_total_trips), 2) AS cancellation_rate
+		FROM user_base_session b
+		LEFT JOIN users u ON b.user_id = u.user_id
+		LEFT JOIN user_base_trip t ON b.user_id = t.user_id
+	  )
+
+SELECT
+	user_id,
+  -- DECISION TREE --
+-- 1/ Has the user booked a flight or a hotel?
+	CASE WHEN num_valid_trips >0 -- OPENING CASE 1
+	THEN
+-- 2/ Has children? 
+			CASE WHEN has_children = True -- OPENING CASE 2
+			THEN
+-- 3/ Is the user more than 58 years old?
+					CASE WHEN age < 58 -- OPENING CASE 3
+					THEN 'Shoreline Family' 
+	      	ELSE -- user with at least 1 trip, children, but older than 58 years old =
+-- 4/ Has the user booked more than 80% of the flight and with a discount?
+          	  CASE WHEN total_discounted_flight_and_hotel > (0.8 * num_valid_trips) -- OPENING CASE 4
+              -- if those conditions are satisfied, the user is added to the FREEBIE TIDE COLLECTOR segment
+					  	THEN 'Freebie Tide Collector'
+              -- if not, we check if that user is more of a early bird or last-minute planner and get the user
+              -- added to the DEEP TIDE PLANNERS or RIPTIDE RUSH
+            	ELSE
+                  CASE WHEN avg_time_after_booking > '90' -- OPENING CASE 5
+                  THEN 'Deep Tide Planners'
+  								ELSE 'Riptide Rush'
+                  END -- CLOSING CASE 5
+              END -- CLOSING CASE 4
+          END -- CLOSING CASE 3
+-- Here is the ELSE condition when the user has no child
+-- We check if the user booked more than 80% of the flight and with a discount?
+			ELSE
+      		CASE WHEN total_discounted_flight_and_hotel > (0.8 * num_valid_trips) -- OPENING CASE 6
+          -- if those conditions are satisfied, the user is added to the FREEBIE TIDE COLLECTOR segment
+          THEN 'Freebie Tide Collector'
+          ELSE
+          -- if not, we check if that user is more of a early bird or last-minute planner and get the user
+          -- added to the DEEP TIDE PLANNERS or RIPTIDE RUSH
+          		CASE WHEN avg_time_after_booking > '90' -- OPENING CASE 7
+              THEN 'Deep Tide Planners'
+  						ELSE 'Riptide Rush'
+              END -- CLOSING CASE 7
+          END -- CLOSING CASE 6
+      END -- CLOSING CASE 2
+	ELSE 'Unknown Tide'
+	END AS selected_group, -- CLOSING CASE 1
+
+-- CALCULATION OF THE SCORE FOR REWARD LEVEL
+-- RECENCY SCORE
+	  CASE 
+  	  WHEN days_since_last_session < 30 THEN 5
+ 		  WHEN days_since_last_session BETWEEN 31 AND 60 THEN 4
+  	  WHEN days_since_last_session BETWEEN 61 AND 90 THEN 3
+    	WHEN days_since_last_session BETWEEN 91 AND 120 THEN 2
+    	ELSE 1
+  	END
+ 		+
+-- FREQUENCY SCORE
+  	CASE 
+   		WHEN (num_flight_booked + num_hotel_booked) > 9 THEN 5
+    	WHEN (num_flight_booked + num_hotel_booked) BETWEEN 5 AND 9 THEN 4
+    	WHEN (num_flight_booked + num_hotel_booked) BETWEEN 4 AND 5 THEN 3
+    	WHEN (num_flight_booked + num_hotel_booked) BETWEEN 2 AND 3 THEN 2
+    	ELSE 1
+  	END
+  	+
+-- MONETARY SCORE
+  	CASE 
+    	WHEN (money_spent_hotel + total_fare) > 3000 THEN 5
+    	WHEN (money_spent_hotel + total_fare) BETWEEN 1500 AND 3000 THEN 4
+    	WHEN (money_spent_hotel + total_fare) BETWEEN 1000 AND 1499 THEN 3
+    	WHEN (money_spent_hotel + total_fare) BETWEEN 500 AND 999 THEN 2
+    	ELSE 1
+  	END AS reward_score,
+-- REWARD LEVEL
+CASE
+    WHEN (
+      CASE 
+        WHEN days_since_last_session < 30 THEN 5
+        WHEN days_since_last_session BETWEEN 31 AND 60 THEN 4
+        WHEN days_since_last_session BETWEEN 61 AND 90 THEN 3
+        WHEN days_since_last_session BETWEEN 91 AND 120 THEN 2
+        ELSE 1
+      END
+      +
+      CASE 
+        WHEN (num_flight_booked + num_hotel_booked) > 9 THEN 5
+        WHEN (num_flight_booked + num_hotel_booked) BETWEEN 5 AND 9 THEN 4
+        WHEN (num_flight_booked + num_hotel_booked) BETWEEN 4 AND 5 THEN 3
+        WHEN (num_flight_booked + num_hotel_booked) BETWEEN 2 AND 3 THEN 2
+        ELSE 1
+      END
+      +
+      CASE 
+        WHEN (money_spent_hotel + total_fare) > 3000 THEN 5
+        WHEN (money_spent_hotel + total_fare) BETWEEN 1500 AND 3000 THEN 4
+        WHEN (money_spent_hotel + total_fare) BETWEEN 1000 AND 1499 THEN 3
+        WHEN (money_spent_hotel + total_fare) BETWEEN 500 AND 999 THEN 2
+        ELSE 1
+      END
+    ) BETWEEN 3 AND 7 THEN 'Low Tide'
+    WHEN (
+      CASE 
+        WHEN days_since_last_session < 30 THEN 5
+        WHEN days_since_last_session BETWEEN 31 AND 60 THEN 4
+        WHEN days_since_last_session BETWEEN 61 AND 90 THEN 3
+        WHEN days_since_last_session BETWEEN 91 AND 120 THEN 2
+        ELSE 1
+      END
+      +
+      CASE 
+        WHEN (num_flight_booked + num_hotel_booked) > 9 THEN 5
+        WHEN (num_flight_booked + num_hotel_booked) BETWEEN 5 AND 9 THEN 4
+        WHEN (num_flight_booked + num_hotel_booked) BETWEEN 4 AND 5 THEN 3
+        WHEN (num_flight_booked + num_hotel_booked) BETWEEN 2 AND 3 THEN 2
+        ELSE 1
+      END
+      +
+      CASE 
+        WHEN (money_spent_hotel + total_fare) > 3000 THEN 5
+        WHEN (money_spent_hotel + total_fare) BETWEEN 1500 AND 3000 THEN 4
+        WHEN (money_spent_hotel + total_fare) BETWEEN 1000 AND 1499 THEN 3
+        WHEN (money_spent_hotel + total_fare) BETWEEN 500 AND 999 THEN 2
+        ELSE 1
+      END
+    ) BETWEEN 8 AND 12 THEN 'High Tide'
+    ELSE 'King Tide'
+  END AS reward_level,
+  days_since_last_session, -- Added here for verification
+	num_valid_trips, -- Added here for verification
+	has_children, -- Added here for verification
+	total_discounted_flight_and_hotel, -- Added here for verification
+  avg_time_after_booking, -- Added here for verification
+  COALESCE(money_spent_hotel + total_fare, 0) AS total_spent -- to keep to measure value in groups
+FROM final_user_table
