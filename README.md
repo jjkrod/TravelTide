@@ -36,10 +36,10 @@ Use of the RFM Analysis (Recency, Frequency, Monetary) to score the loyalty. Bas
 * Group categorized as family
 ### Examples of groups and metrics
 Unknown Tide: 0 booking
-Freebie Tide Collector: > 80% booking with discount applied
-Shoreline: Family (has children, age < 58)
-Deep Tide Planners: Early Birds (duration between flight or hotel and booking date > 90 days)
-Riptide Rush: Last-Minute (duration between flight or hotel and booking date < 90 days)
+<br>Freebie Tide Collector: > 80% booking with discount applied
+<br>Shoreline: Family (has children, age < 58)
+<br>Deep Tide Planners: Early Birds (duration between flight or hotel and booking date > 90 days)
+<br>Riptide Rush: Last-Minute (duration between flight or hotel and booking date < 90 days)
 ### Table of groups (+ Perks)
 | Group Name | Perks |
 | --- | --- |
@@ -56,18 +56,17 @@ Riptide Rush: Last-Minute (duration between flight or hotel and booking date < 9
 | King Tide | 13-15 | 20% off on selected flights and hotels <br> Customer support within 2 hours |
 ## Marketing Project - Out of Scope
 For any user who lands on the website, we would attract them with a small quiz.
-Quiz: “Where would be your next adventure?” in 4 questions
+<br>Quiz: “Where would be your next adventure?” in 4 questions
 * Season = summer/winter
 * Activity = chill/energetic
 * Group = alone/couple/friends/family
 * Budget = ranges of budget
-Your next destination is: _____ with 15% off on the flight+hotel booking.
-On top of giving some traction with that reward through that quizz, the data we collect will be kept for future advertising and tailored offering.
+<br>Your next destination is: _____ with 15% off on the flight+hotel booking.
+<br>On top of giving some traction with that reward through that quizz, the data we collect will be kept for future advertising and tailored offering.
 ## Additional Data Collection
-### 
-user.user_id (integer) -- 48629
-user.first_name (varchar) -- Jean
-user.last_name (varchar) -- Louis
+`user.user_id (integer) -- 48629`
+<br>`user.first_name (varchar) -- Jean`
+<br>user.last_name (varchar) -- Louis
 user.email_address (varchar) -- jean.louis@gmail.com
 user.phone_number (varchar) -- +49 123 345 3224
 user.street_address (varchar) -- Vogelstrasse 6
