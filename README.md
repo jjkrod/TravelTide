@@ -119,3 +119,14 @@ For any user who lands on the website, we would attract them with a small quiz.
 <br>`trip.travel_insurance_booked (boolean) -- false`
 <br>`trip.number_travel_insurance_booked (integer) -- 0`
 <br>`trip.total_amount_spent_travel_insurance (decimal) -- 0.00`
+## Next Steps
+### Implementation
+Teamwork between the data, marketing and tech teams to implement those automated perks and rewards based on their behavior and demographic data.
+### A/B Testing
+We will keep a population out of this and do A/B testing on the different perks based on different factors.
+### Additional Data
+Thanks to additional data collected, we will offer tailored perks, based on the user’s preferences and behavior.
+### Rewards Program Activation
+In additional to the perks, we will activate and launch this reward program based on the RFM analysis.
+### Optimization
+Ongoing monitoring to optimize the costs of those perks and rewards alongside the ARPU and shorter the time from lead to purchase.
